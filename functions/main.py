@@ -143,6 +143,10 @@ def on_scan_accessory_notification(event: Event[DocumentSnapshot]):
     for user in firestore_client.collection('family/{}/users'.format(public_accessory.get('familyId'))).get():
         fcmToken = firestore_client.document('userData/{}'.format(user.id)).get().get('fcmToken')
 
+        print(fcmToken)
+        print(pet_id)
+        print(f'{pet_id}')
+
         message = messaging.Message(
             notification=messaging.Notification(
                 title='Escaneo detectado',
