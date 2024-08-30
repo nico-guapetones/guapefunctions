@@ -10,10 +10,8 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
-firestore-*
+# Manual ignores
 
-functions/venv
-functions/__pycache__
 
 # Firebase config
 
@@ -69,3 +67,13 @@ node_modules/
 
 # dotenv environment variables file
 .env
+
+# dataconnect generated files
+.dataconnect
+
+firestore*
+functions/venv2
+
+functions/__pycache__
+
+functions/venv/bin/watchmedo
