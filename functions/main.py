@@ -37,7 +37,7 @@ def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
         firestore_client.document("publicAccessory/{}".format(accessory)).update({
             'petData': pet_data,
         })
-
+        
 # Nueva version, sale con la version 2 de la app
 # @on_document_updated(document="family/{familyId}/pet/{petId}")
 # def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
