@@ -30,11 +30,14 @@ def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
 
     new_value = event.data.after
 
+    pet_data = new_value.to_dict()
+    pet_data['id'] = event.data.after.id 
+    
     for accessory in new_value.to_dict().get("accessories"):
         firestore_client.document("publicAccessory/{}".format(accessory)).update({
-            'petData': new_value.to_dict(),
+            'petData': pet_data,
         })
-
+        
 # Nueva version, sale con la version 2 de la app
 # @on_document_updated(document="family/{familyId}/pet/{petId}")
 # def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
