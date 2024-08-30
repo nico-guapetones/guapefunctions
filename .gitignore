@@ -72,8 +72,6 @@ node_modules/
 .dataconnect
 
 firestore*
-functions/venv2
-
+functions/venv
 functions/__pycache__
-
 functions/venv/bin/watchmedo
