@@ -3,6 +3,7 @@
 # Deploy with `firebase deploy`
 # from firebase_functions import logger
 import json
+import datetime
 
 from firebase_functions import https_fn, options
 from firebase_admin import initialize_app, firestore, messaging
@@ -27,32 +28,30 @@ initialize_app()
 def fix_pet_accessory_relation(req: https_fn.Request) -> https_fn.Response:
     firestore_client: google.cloud.firestore.Client = firestore.client()
 
+    startTime = datetime.datetime.now()
     print('BEGINING')
 
-    families = firestore_client.collection("family").get()
+    for family in firestore_client.collection("family").get():
 
-    pets = []
+        print(f"Family: {family.id}")
 
-    for family in families:
-        
-        print(f'Processing family {family.id}')
+        for pet in firestore_client.collection(f"family/{family.id}/pet").get():
 
-        if 'pet' in family.to_dict().keys():
-            pets.append(pet)
+            print(f"Pet: {pet.id}")
 
-    print(pets.__len__())
+            for accesory in pet._data.get('accessories'):
 
-    for pet in pets:
+                petData = pet._data
+                petData['id'] = pet.id
 
-        print(f'Processing pet {pet.id}')
+                docRef = firestore_client.document(f"publicAccessory/{accesory}")
 
-        pet_accessories = pet.get('accessories')
-        
-        firestore_client.document(f"publicAccessory/{pet_accessories[0]}").update({
-            'petData': { id: pet.id },
-        })
+                if docRef.get().exists:
+                    docRef.update({
+                        'petData': petData
+                    })
 
-    print('DONE PROCESSING')
+    print(f'DONE PROCESSING IN {datetime.datetime.now() - startTime}')
 
     return https_fn.Response("END")
 
