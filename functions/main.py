@@ -23,6 +23,38 @@ from google.cloud.firestore_v1 import DocumentReference
 
 initialize_app()
 
+@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def fix_pet_accessory_relation(req: https_fn.Request) -> https_fn.Response:
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+
+    print('BEGINING')
+
+    families = firestore_client.collection("family").get()
+
+    pets = []
+
+    for family in families:
+        
+        print(f'Processing family {family.id}')
+
+        if 'pet' in family.to_dict().keys():
+            pets.append(pet)
+
+    print(pets.__len__())
+
+    for pet in pets:
+
+        print(f'Processing pet {pet.id}')
+
+        pet_accessories = pet.get('accessories')
+        
+        firestore_client.document(f"publicAccessory/{pet_accessories[0]}").update({
+            'petData': { id: pet.id },
+        })
+
+    print('DONE PROCESSING')
+
+    return https_fn.Response("END")
 
 @on_document_updated(document="family/{familyId}/pet/{petId}")
 def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
