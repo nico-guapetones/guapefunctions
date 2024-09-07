@@ -3,6 +3,7 @@
 # Deploy with `firebase deploy`
 # from firebase_functions import logger
 import json
+import datetime
 
 from firebase_functions import https_fn, options
 from firebase_admin import initialize_app, firestore, messaging
@@ -23,6 +24,36 @@ from google.cloud.firestore_v1 import DocumentReference
 
 initialize_app()
 
+@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def fix_pet_accessory_relation(req: https_fn.Request) -> https_fn.Response:
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+
+    startTime = datetime.datetime.now()
+    print('BEGINING')
+
+    for family in firestore_client.collection("family").get():
+
+        print(f"Family: {family.id}")
+
+        for pet in firestore_client.collection(f"family/{family.id}/pet").get():
+
+            print(f"Pet: {pet.id}")
+
+            for accesory in pet._data.get('accessories'):
+
+                petData = pet._data
+                petData['id'] = pet.id
+
+                docRef = firestore_client.document(f"publicAccessory/{accesory}")
+
+                if docRef.get().exists:
+                    docRef.update({
+                        'petData': petData
+                    })
+
+    print(f'DONE PROCESSING IN {datetime.datetime.now() - startTime}')
+
+    return https_fn.Response("END")
 
 @on_document_updated(document="family/{familyId}/pet/{petId}")
 def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
