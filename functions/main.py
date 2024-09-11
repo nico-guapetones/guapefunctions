@@ -28,33 +28,36 @@ initialize_app()
 @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["post"]))
 def convert_userid_or_email(req: https_fn.Request) -> https_fn.Response: 
 
-    decoded_token = auth.verify_id_token(req.authorization.token)
-    uid = decoded_token['uid']
+    if (req.authorization != None):
+        decoded_token = auth.verify_id_token(req.authorization.token)
+        uid = decoded_token['uid']
 
-    user = auth.get_user(uid)
+        user = auth.get_user(uid)
 
-    firestore_client: google.cloud.firestore.Client = firestore.client()
+        firestore_client: google.cloud.firestore.Client = firestore.client()
 
-    # Is admin
-    if firestore_client.document(f"admins/{user.uid}").get().exists:
-        request = json.loads(req.data)
+        # Is admin
+        if firestore_client.document(f"admins/{user.uid}").get().exists:
+            request = json.loads(req.data)
 
-        keys = list(request.keys())
+            keys = list(request.keys())
 
-        response = '';
+            response = '';
 
-        match keys[0]:
-            case 'userId':
-                userAuth = auth.get_user(request['userId'])
-                response = userAuth.email
+            match keys[0]:
+                case 'userId':
+                    userAuth = auth.get_user(request['userId'])
+                    response = { 'email': userAuth.email }
 
-            case 'email':
-                userAuth = auth.get_user_by_email(request['email'])
-                response = userAuth.uid
-                
-        return https_fn.Response(response)
-    
-    #Not admin
+                case 'email':
+                    userAuth = auth.get_user_by_email(request['email'])
+                    response = { 'userId': userAuth.uid }
+                    
+            return https_fn.Response(json.dumps(response, indent = 4))
+        
+        #Not admin
+        else:
+            return https_fn.Response("", 403)
     else:
         return https_fn.Response("", 403)
 
