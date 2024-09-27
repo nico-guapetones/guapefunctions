@@ -60,42 +60,6 @@ def convert_userid_or_email(req: https_fn.Request) -> https_fn.Response:
     else:
         return https_fn.Response("", 403)
 
-# @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
-# def fix_pet_accessory_relation(req: https_fn.Request) -> https_fn.Response:
-#
-#     async def process_family(family):
-#         for pet in firestore_client.collection(f"family/{family.id}/pet").get():
-#
-#             print(f"Pet: {pet.id}")
-#
-#             for accesory in pet._data.get('accessories'):
-#
-#                 petData = pet._data
-#                 petData['id'] = pet.id
-#
-#                 docRef = firestore_client.document(f"publicAccessory/{accesory}")
-#
-#                 if docRef.get().exists:
-#                     await docRef.update({
-#                         'petData': petData
-#                     })
-#
-#     firestore_client: google.cloud.firestore.Client = firestore.client()
-#
-#     startTime = datetime.datetime.now()
-#     print('BEGINING')
-#
-#     for family in firestore_client.collection("family").get():
-#
-#         print(f"Family: {family.id}")
-#         process_family(family)
-#
-#
-#
-#     print(f'DONE PROCESSING IN {datetime.datetime.now() - startTime}')
-#
-#     return https_fn.Response("END")
-
 @on_document_updated(document="family/{familyId}/pet/{petId}")
 def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
     firestore_client: google.cloud.firestore.Client = firestore.client()
@@ -110,23 +74,6 @@ def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
             'petData': pet_data,
         })
         
-# Nueva version, sale con la version 2 de la app
-# @on_document_updated(document="family/{familyId}/pet/{petId}")
-# def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
-#     firestore_client: google.cloud.firestore.Client = firestore.client()
-#     new_value = event.data.after
-#
-#     if new_value.get('creationCompleted'):
-#         for accessory_id in new_value.get('accessories'):
-#             public_data = {
-#                 'id': accessory_id,
-#                 'petData': new_value.to_dict()
-#             }
-#             firestore_client.document('publicAccessory/{}'.format(public_data.get('id'))).update(
-#                 public_data
-#             )
-
-
 @on_document_deleted(document="family/{familyId}/pet/{petId}")
 def on_pet_delete(event: Event[DocumentSnapshot]) -> None:
     # TODO: Sin testear
@@ -140,7 +87,6 @@ def on_pet_delete(event: Event[DocumentSnapshot]) -> None:
         firestore_client.document('publicAccessory/{}'.format(accessory.id)).update(
             public_data
         )
-
 
 @on_document_updated(document="userData/{userId}")
 def on_user_data_update(event: Event[Change[DocumentSnapshot]]) -> None:
@@ -170,12 +116,10 @@ def on_user_data_update(event: Event[Change[DocumentSnapshot]]) -> None:
             public_data
         )
 
-
 @on_document_deleted(document="family/{familyId}/accessory/{accessoryId}")
 def on_accessory_delete(event: Event[DocumentSnapshot]) -> None:
     firestore_client: google.cloud.firestore.Client = firestore.client()
     firestore_client.document('publicAccessory/{}'.format(event.data.get('id'))).delete()
-
 
 @on_document_created(document="family/{familyId}/accessory/{accessoryId}")
 def on_accessory_create(event: Event[DocumentSnapshot]) -> None:
@@ -204,7 +148,6 @@ def on_accessory_create(event: Event[DocumentSnapshot]) -> None:
         public_data
     )
 
-
 @on_document_created(document="geoLocations/{accessory_id}/scans/{scan_id}")
 def on_scan_accessory_notification(event: Event[DocumentSnapshot]):
     firestore_client: google.cloud.firestore.Client = firestore.client()
@@ -231,7 +174,6 @@ def on_scan_accessory_notification(event: Event[DocumentSnapshot]):
             data={'type': 'on_scan_accessory_notification', 'pet_id': pet_id}
         )
         messaging.send(message)
-
 
 @https_fn.on_call()
 def family_delete(req: https_fn.CallableRequest):
@@ -273,8 +215,93 @@ def family_delete(req: https_fn.CallableRequest):
 
     return
 
+@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def mark_all_pets_completed(req: https_fn.Request) -> https_fn.Response:
 
+    firestore_client: google.cloud.firestore.Client = firestore.client()
 
+    startTime = datetime.datetime.now()
+
+    unmodified = 0
+    modified = 0
+
+    print('BEGINING')
+
+    for family in firestore_client.collection("family").get():
+
+        print(f"Family: {family.id}")
+
+        for pet in firestore_client.collection(f"family/{family.id}/pet").get():
+
+            print(f"Pet: {pet.id}")
+
+            if pet._data.creationCompleted == None | pet._data.creationCompleted == False:
+                
+                firestore_client.document(f"family/{family.id}/pet/{pet.id}").update({
+                    'creationCompleted': True
+                })
+
+                modified += 1
+            else:
+                unmodified += 1
+
+    print(f'DONE PROCESSING IN {datetime.datetime.now() - startTime}')
+    print(f'Modified pets: {modified}')
+    print(f'Unmodified pets: {unmodified}')
+
+    return https_fn.Response("END")
+
+# @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+# def fix_pet_accessory_relation(req: https_fn.Request) -> https_fn.Response:
+#
+#     async def process_family(family):
+#         for pet in firestore_client.collection(f"family/{family.id}/pet").get():
+#
+#             print(f"Pet: {pet.id}")
+#
+#             for accesory in pet._data.get('accessories'):
+#
+#                 petData = pet._data
+#                 petData['id'] = pet.id
+#
+#                 docRef = firestore_client.document(f"publicAccessory/{accesory}")
+#
+#                 if docRef.get().exists:
+#                     await docRef.update({
+#                         'petData': petData
+#                     })
+#
+#     firestore_client: google.cloud.firestore.Client = firestore.client()
+#
+#     startTime = datetime.datetime.now()
+#     print('BEGINING')
+#
+#     for family in firestore_client.collection("family").get():
+#
+#         print(f"Family: {family.id}")
+#         process_family(family)
+#
+#
+#
+#     print(f'DONE PROCESSING IN {datetime.datetime.now() - startTime}')
+#
+#     return https_fn.Response("END")
+
+# Nueva version, sale con la version 2 de la app
+# @on_document_updated(document="family/{familyId}/pet/{petId}")
+# def on_pet_update(event: Event[Change[DocumentSnapshot]]) -> None:
+#     firestore_client: google.cloud.firestore.Client = firestore.client()
+#     new_value = event.data.after
+#
+#     if new_value.get('creationCompleted'):
+#         for accessory_id in new_value.get('accessories'):
+#             public_data = {
+#                 'id': accessory_id,
+#                 'petData': new_value.to_dict()
+#             }
+#             firestore_client.document('publicAccessory/{}'.format(public_data.get('id'))).update(
+#                 public_data
+#             )
 
 # @https_fn.on_request()
 # def family_delete_test(req: https_fn.CallableRequest):
