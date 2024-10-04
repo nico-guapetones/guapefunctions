@@ -99,9 +99,11 @@ def on_user_data_update(event: Event[Change[DocumentSnapshot]]) -> None:
         print(accessory)
         contacts = []
 
-        contact_data = {'userName': new_value.get('userName'),
-                        'phone': "{}{}".format(new_value.get('countryCode'),
-                                               new_value.get('phoneNumber'))}
+        contact_data = {
+            'userName': new_value.get('userName'),
+            'phone': "{}{}".format(new_value.get('countryCode'),new_value.get('phoneNumber')),
+            'phoneSecondary': f"{user_data.get('countryCode')}{user_data.get('phoneNumberSecondary')}"
+        }
 
         contacts.append(contact_data)
 
@@ -134,11 +136,14 @@ def on_accessory_create(event: Event[DocumentSnapshot]) -> None:
 
     for user in firestore_client.collection('family/{}/users'.format(family_id)).get():
         user_data = firestore_client.document('userData/{}'.format(user.id)).get()
+        contact_data = {}
+
         contact_data = {
             'userName': user_data.get('userName'),
             'phone': "{}{}".format(user_data.get('countryCode'), user_data.get('phoneNumber'))
-            'phoneSecondary': "{}{}".format(user_data.get('countryCode'), user_data.get('phoneNumberSecondary'))
-            }
+            'phoneSecondary': f"{user_data.get('countryCode')}{user_data.get('phoneNumberSecondary')}"
+        }
+
         contacts.append(contact_data)
 
     public_data = {
