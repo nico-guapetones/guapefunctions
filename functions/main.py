@@ -134,8 +134,11 @@ def on_accessory_create(event: Event[DocumentSnapshot]) -> None:
 
     for user in firestore_client.collection('family/{}/users'.format(family_id)).get():
         user_data = firestore_client.document('userData/{}'.format(user.id)).get()
-        contact_data = {'userName': user_data.get('userName'),
-                        'phone': "{}{}".format(user_data.get('countryCode'), user_data.get('phoneNumber'))}
+        contact_data = {
+            'userName': user_data.get('userName'),
+            'phone': "{}{}".format(user_data.get('countryCode'), user_data.get('phoneNumber'))
+            'phoneSecondary': "{}{}".format(user_data.get('countryCode'), user_data.get('phoneNumberSecondary'))
+            }
         contacts.append(contact_data)
 
     public_data = {
